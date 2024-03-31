@@ -8,12 +8,31 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		string commitSha = Git("rev-parse HEAD");
+		bool isClean = Git("status --porcelain") == string.Empty;
+		string source = $$"""
+			// This type may not update on hot reloads idk
+			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+			internal static partial class ThisAssembly {
+				internal const bool IsClean = {{isClean.ToString().ToLower()}};
+				internal const string CommitSha = "{{commitSha}}";
+				internal const string Version = "{{commitSha}}{{(isClean ? "" : "-dirty")}}";
+			}
+			""";
+		context.RegisterPostInitializationOutput(c =>
+		{
+			c.AddSource("ThisAssembly.g.cs", source);
+		});
+	}
+
+	private static string Git(string args)
+	{
 		Process proc = new()
 		{
-			StartInfo = new ProcessStartInfo()
+			StartInfo = new ProcessStartInfo
 			{
 				FileName = "git",
-				ArgumentList = { "rev-parse", "HEAD" },
+				Arguments = args,
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
 				CreateNoWindow = true
@@ -21,17 +40,12 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 		};
 		proc.Start();
 		proc.WaitForExit();
-		string commitSha = proc.StandardOutput.ReadToEnd()[..^1];
-		string source = $$"""
-			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-			internal static partial class ThisAssembly {
-				internal const string CommitSha = "{{commitSha}}";
-				internal const string Version = "{{commitSha}}";
-			}
-			""";
-		context.RegisterPostInitializationOutput(c =>
+		string procOut = proc.StandardOutput.ReadToEnd()[..^1];
+		if (proc.ExitCode != 0)
 		{
-			c.AddSource("ThisAssembly.g.cs", source);
-		});
+			throw new Exception($"\"git {args}\" failed with exit code {proc.ExitCode}." +
+				$"\nstdout: {procOut}\nstderr: {proc.StandardError.ReadToEnd()}");
+		}
+		return procOut;
 	}
 }
