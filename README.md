@@ -1,9 +1,12 @@
 # FracturedCode.GitVersioning
 
-Access your software version as a commit hash in C#.
+Version with the commit hash and access said version in C#.
 
 It's so simple, you could "install" this by adding the one csharp file and 
 two dependencies to your project by hand.
+
+This project implements [a source generator (`IIncrementalGenerator`)](https://github.com/dotnet/roslyn/blob/main/docs/features/incremental-generators.md) to 
+provide the functionality.
 
 ## Installation and usage
 
@@ -72,7 +75,7 @@ a bit much.
 
 ## Irony
 
-Yes, I know in order to publish this as a package it has to have a semver. If 
+Yes, I know if I want to publish this as a package it has to have a semver. If 
 you think this is an actual criticism, you may have missed the point.
 
 ## Resources
