@@ -86,3 +86,7 @@ you think this is an actual criticism, you may have missed the point.
 - [GitVersion](https://gitversion.net/)
 - [MinVer](https://github.com/adamralph/minver)
 - [OctoVersion](https://github.com/OctopusDeploy/OctoVersion)
+
+## License
+
+[MIT License](./LICENSE)
