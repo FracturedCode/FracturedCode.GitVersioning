@@ -16,7 +16,11 @@ want to have it.
 Example:
 ```Bash
 git submodule add "<this-repo's-url>"
-dotnet add reference FracturedCode.GitVersioning/GitVersioning.csproj
+```
+```xml
+<ProjectReference Include="FracturedCode.GitVersioning\GitVersioning.csproj"
+    OutputItemType="Analyzer"
+    ReferenceOutputAssembly="false" />
 ```
 
 You could also use `Directory.Build.props` to add it to all 
