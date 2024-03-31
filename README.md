@@ -16,6 +16,7 @@ want to have it.
 Example:
 ```Bash
 git submodule add "<this-repo's-url>"
+dotnet sln add FracturedCode.GitVersioning\GitVersioning.csproj
 ```
 ```xml
 <ProjectReference Include="FracturedCode.GitVersioning\GitVersioning.csproj"
