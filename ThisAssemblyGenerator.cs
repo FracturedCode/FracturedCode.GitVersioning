@@ -34,6 +34,7 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 				Arguments = args,
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
+				RedirectStandardError = true,
 				CreateNoWindow = true
 			}
 		};
