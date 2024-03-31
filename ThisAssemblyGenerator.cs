@@ -4,27 +4,9 @@ using Microsoft.CodeAnalysis;
 namespace FracturedCode.GitVersioning;
 
 [Generator(LanguageNames.CSharp)]
-public class ThisAssemblyGenerator : IIncrementalGenerator
+public class ThisAssemblyGenerator : ISourceGenerator
 {
-	public void Initialize(IncrementalGeneratorInitializationContext context)
-	{
-		string commitSha = Git("rev-parse HEAD");
-		bool isClean = Git("status --porcelain") == string.Empty;
-		string source = $$"""
-			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-			internal static partial class ThisAssembly {
-				internal const bool IsClean = {{isClean.ToString().ToLower()}};
-				internal const string CommitSha = "{{commitSha}}";
-				internal const string Version = "{{commitSha}}{{(isClean ? "" : "-dirty")}}";
-			}
-			""";
-		context.RegisterPostInitializationOutput(c =>
-		{
-			c.AddSource("ThisAssembly.g.cs", source);
-		});
-	}
-
-	private static string Git(string args)
+	private static string Git(string args, string workingDir)
 	{
 		Process proc = new()
 		{
@@ -35,7 +17,8 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
-				CreateNoWindow = true
+				CreateNoWindow = true,
+				WorkingDirectory = $"{workingDir}"
 			}
 		};
 		proc.Start();
@@ -47,5 +30,25 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 				$"\nstdout: {procOut}\nstderr: {proc.StandardError.ReadToEnd()}");
 		}
 		return procOut;
+	}
+
+	public void Initialize(GeneratorInitializationContext context) { }
+
+	public void Execute(GeneratorExecutionContext context)
+	{
+		var mainSyntaxTree = context.Compilation.SyntaxTrees
+			.First(x => x.HasCompilationUnitRoot);
+		string rootDir = Path.GetDirectoryName(mainSyntaxTree.FilePath) ?? throw new Exception("Could not retrieve the compilation root directory.");
+		string commitSha = Git("rev-parse HEAD", rootDir);
+		bool isClean = Git("status --porcelain", rootDir) == string.Empty;
+		string source = $$"""
+			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+			internal static partial class ThisAssembly {
+				internal const bool IsClean = {{isClean.ToString().ToLower()}};
+				internal const string CommitSha = "{{commitSha}}";
+				internal const string Version = "{{commitSha}}{{(isClean ? "" : "-dirty")}}";
+			}
+			""";
+		context.AddSource("ThisAssembly.g.cs", source);
 	}
 }
