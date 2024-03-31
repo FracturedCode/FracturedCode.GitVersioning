@@ -11,7 +11,6 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 		string commitSha = Git("rev-parse HEAD");
 		bool isClean = Git("status --porcelain") == string.Empty;
 		string source = $$"""
-			// This type may not update on hot reloads idk
 			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 			internal static partial class ThisAssembly {
 				internal const bool IsClean = {{isClean.ToString().ToLower()}};
@@ -40,7 +39,7 @@ public class ThisAssemblyGenerator : IIncrementalGenerator
 		};
 		proc.Start();
 		proc.WaitForExit();
-		string procOut = proc.StandardOutput.ReadToEnd()[..^1];
+		string procOut = proc.StandardOutput.ReadToEnd().TrimEnd();
 		if (proc.ExitCode != 0)
 		{
 			throw new Exception($"\"git {args}\" failed with exit code {proc.ExitCode}." +
