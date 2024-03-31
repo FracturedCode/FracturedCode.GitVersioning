@@ -6,7 +6,7 @@ namespace FracturedCode.GitVersioning;
 [Generator(LanguageNames.CSharp)]
 public class ThisAssemblyGenerator : ISourceGenerator
 {
-	private static string Git(string args, string workingDir)
+	private static string Git(string args)
 	{
 		Process proc = new()
 		{
@@ -18,7 +18,6 @@ public class ThisAssemblyGenerator : ISourceGenerator
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				CreateNoWindow = true,
-				WorkingDirectory = $"{workingDir}"
 			}
 		};
 		proc.Start();
@@ -32,15 +31,10 @@ public class ThisAssemblyGenerator : ISourceGenerator
 		return procOut;
 	}
 
-	public void Initialize(GeneratorInitializationContext context) { }
-
-	public void Execute(GeneratorExecutionContext context)
+	public void Initialize(GeneratorInitializationContext context)
 	{
-		var mainSyntaxTree = context.Compilation.SyntaxTrees
-			.First(x => x.HasCompilationUnitRoot);
-		string rootDir = Path.GetDirectoryName(mainSyntaxTree.FilePath) ?? throw new Exception("Could not retrieve the compilation root directory.");
-		string commitSha = Git("rev-parse HEAD", rootDir);
-		bool isClean = Git("status --porcelain", rootDir) == string.Empty;
+		string commitSha = Git("rev-parse HEAD");
+		bool isClean = Git("status --porcelain") == string.Empty;
 		string source = $$"""
 			[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 			internal static partial class ThisAssembly {
@@ -49,6 +43,8 @@ public class ThisAssemblyGenerator : ISourceGenerator
 				internal const string Version = "{{commitSha}}{{(isClean ? "" : "-dirty")}}";
 			}
 			""";
-		context.AddSource("ThisAssembly.g.cs", source);
+		context.RegisterForPostInitialization(c => c.AddSource("ThisAssembly.g.cs", source));
 	}
+
+	public void Execute(GeneratorExecutionContext context) { }
 }
